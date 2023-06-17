@@ -53,8 +53,10 @@ tts() {
 }
 
 paste_tts() {
-    text="$(wl-paste | sed 's/[^[a-zA-Z1-9]-]//g'|tr -d \'\" | tr "\n" "\0 " | perl -pe 's/[^[:ascii:]]//g')" 
-    ssh localhost -p 8022 "termux-tts-speak '${text}'"
+    # text="$(wl-paste | sed 's/[^[a-zA-Z1-9]-]//g'|tr -d \'\" | tr "\n" "\0 " | perl -pe 's/[^[:ascii:]]//g')" 
+    # text="$(wl-paste | sed 's/[^[a-zA-Z1-9]-]//g'|tr -d \'\" | perl -pe 's/[^[:ascii:]]//g')" 
+    text="${*}"
+    ssh localhost -p 8022 "termux-tts-speak '''${text}'''"
 }
 
 clean_text() {
@@ -63,7 +65,9 @@ clean_text() {
 
 cliphistory() {
     # speak tts from clipboard history
-    text="$(cliphist list | wofi -d | cliphist decode | sed 's/[^[a-zA-Z1-9]-]//g'|tr -d \'\" | tr "\n" "\0 " | perl -pe 's/[^[:ascii:]]//g')"
+    # text="$(cliphist list | wofi -d | cliphist decode | sed 's/[^[a-zA-Z1-9]-]//g'|tr -d \'\" | tr "\n" "\0 " | perl -pe 's/[^[:ascii:]]//g')"
+    # text="$(cliphist list | wofi -d | cliphist decode | sed 's/[^[a-zA-Z1-9]-]//g'|tr -d \'\" | tr "\n" | perl -pe 's/[^[:ascii:]]//g')"
+    text="${*}"
     ssh localhost -p 8022 "termux-tts-speak '${text}'"
 }
 
@@ -85,16 +89,23 @@ help() {
 }
 
 case "$1" in
+    # Connection commands
     connect|start|-s) connect ;;
     port|-P|-x) connect_ports ;;
     command|cmd|-c) shift && ssh localhost -p 8022 "${@}" ;;
     stop|-S|--stop) adb forward --remove tcp:8022 ;;
     list|-l|--list) adb forward --list ;;
     stop-all|quit|-q|--quit) adb forward --remove-all ;;
+    # TTS Commands
     tts|-t|--text) shift && tts "${*}" ;;
-    cb|-p|--paste) paste_tts ;;
-    -H|--history|-z) cliphistory ;;
+    cb|-p|--paste) 
+        text="$(wl-paste | sed 's/[^[a-zA-Z1-9]-]//g'|tr -d \'\" | perl -pe 's/[^[:ascii:]]//g')"
+        paste_tts "$text"
+    ;;
+    -H|--history|-z)
+        text="$(cliphist list | wofi -d | cliphist decode | sed 's/[^[a-zA-Z1-9]-]//g'|tr -d \'\" | tr "\n" | perl -pe 's/[^[:ascii:]]//g')"
+        cliphistory "$text"
+    ;;
     --ssh) ssh_termux ;;
 	-h|--help) help ;;
 esac
-
